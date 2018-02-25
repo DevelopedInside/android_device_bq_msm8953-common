@@ -1,0 +1,68 @@
+import init.bq.common.rc
+import init.lct.factory.rc
+
+on boot
+    chmod 0644 /dev/goodix_fp
+    chown system system /dev/goodix_fp
+    setprop sys.fp.goodix 1
+    chmod 0777 /dev/cs_spi
+    chmod 0777 /dev/qseecom
+    chown system system /dev/cs_spi
+    chmod 0644 /dev/sunwave_fp
+    chown system system /dev/sunwave_fp
+
+    chmod 0660 /sys/devices/soc/soc:flashlight/leds/flashlight-front/brightness
+    chown system system /sys/devices/soc/soc:flashlight/leds/flashlight-front/brightness
+    chmod 0664 /sys/class/leds/led:torch_0/brightness
+    chown system system /sys/class/leds/led:torch_0/brightness
+    chmod 0664  /sys/class/leds/led:torch_1/brightness
+    chown system system /sys/class/leds/led:torch_1/brightness
+    chmod 0664  /sys/class/leds/led:switch/brightness
+    chown system system /sys/class/leds/led:switch/brightness
+
+    chmod 0664 /dev/block/mmcblk0p48
+
+    chmod 0664  /sys/touchscreen/tp_capacitance_test_type
+    chown system system /sys/touchscreen/tp_capacitance_test_type
+    chmod 0664  /sys/bus/i2c/devices/3-0038/fts_test
+    chown system system /sys/bus/i2c/devices/3-0038/fts_test
+
+service fingerprintd /system/bin/fingerprintd
+    class late_start
+    user system
+    group system
+
+service gx_fpd /system/bin/gx_fpd
+    class late_start
+    user root
+    group root system
+
+on property:sys.fp.goodix=1
+    start gx_fpd
+
+on property:sys.fp.goodix=0
+    stop gx_fpd
+
+on post-fs-data
+service sdlog /system/bin/sdlog
+    class main
+    user root
+    disabled
+    oneshot
+
+on property:persist.service.sdlog.enable=1
+    start sdlog
+    start logdumpd
+
+on property:persist.service.sdlog.enable=0
+    stop sdlog
+
+service sdlog_cf /system/bin/sdlog --copyfile
+    class main
+    user root
+    disabled
+    oneshot
+
+on property:sys.logcf=1
+    start sdlog_cf
+

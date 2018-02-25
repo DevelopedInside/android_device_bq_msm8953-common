@@ -1,0 +1,90 @@
+import init.bq.device.rc
+import init.bq.usb.rc
+
+service mmc-info /system/bin/sh /system/etc/mmc-info.sh
+    user root
+    group root
+    disabled
+    oneshot
+    seclabel u:r:healthd:s0
+
+on property:sys.mmc-info=1
+    start mmc-info
+
+service optcharg /system/bin/sh /system/etc/init.bq.files.sh
+    class late_start
+    user root
+    oneshot
+
+service cameramod /system/bin/sh /system/etc/init.bq.camera.sh
+    user root
+    disabled
+    oneshot
+
+service tpver /system/bin/sh /system/etc/init.bq.tp.sh
+    user root
+    disabled
+    oneshot
+
+on property:sys.boot_completed=1
+    start cameramod
+    start tpver
+
+on boot
+    # Double Tap to Wake
+    chown root system /sys/android_touch/wakeup_gesture_enable
+    chmod 0660 /sys/android_touch/wakeup_gesture_enable
+
+    #Vibrator intensity modifier
+    chown system system /sys/class/timed_output/vibrator/enable
+    chown system system /sys/class/timed_output/vibrator/wf_s0
+    chown system system /sys/class/timed_output/vibrator/wf_s1
+    chown system system /sys/class/timed_output/vibrator/wf_s2
+    chown system system /sys/class/timed_output/vibrator/wf_s3
+    chown system system /sys/class/timed_output/vibrator/wf_s4
+    chown system system /sys/class/timed_output/vibrator/wf_s5
+    chown system system /sys/class/timed_output/vibrator/wf_s6
+    chown system system /sys/class/timed_output/vibrator/wf_s7
+    chown system system /sys/class/timed_output/vibrator/wf_update_now
+
+    chown system system /sys/class/leds/red/blink
+    chown system system /sys/class/leds/blue/blink
+    chown system system /sys/class/leds/green/blink
+
+service diag_mdlog /system/bin/diag_mdlog
+    user root
+    disabled
+    oneshot
+
+service stop_diag_mdlog /system/bin/diag_mdlog -k
+    user root
+    disabled
+    oneshot
+
+on property:persist.qxdm.enable=1
+    start diag_mdlog
+
+on property:persist.qxdm.enable=0
+    start stop_diag_mdlog
+
+service tcpdumpwifi /system/xbin/tcpdump -i wlan0 -p -s 0 -w /sdcard/tcpdump_wifi.pcap
+    user root
+    disabled
+    oneshot
+
+on property:persist.tcpd.wifi.enable=1
+    start tcpdumpwifi
+
+on property:persist.tcpd.wifi.enable=0
+    stop tcpdumpwifi
+
+service tcpdumpnet /system/xbin/tcpdump -i any -p -s 0 -w /sdcard/tcpdump_net.pcap
+    user root
+    disabled
+    oneshot
+
+on property:persist.tcpd.net.enable=1
+    start tcpdumpnet
+
+on property:persist.tcpd.net.enable=0
+    stop tcpdumpnet
